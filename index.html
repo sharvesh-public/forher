@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Required</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(30, 30, 30, 0.95);
+            padding: 60px 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Password Screen Styles */
+        #password-screen {
+            display: block;
+        }
+
+        #password-screen h1 {
+            font-size: 1.8em;
+            color: #00ff41;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: normal;
+        }
+
+        #password-screen .lock-icon {
+            font-size: 4em;
+            margin: 30px 0;
+            opacity: 0.8;
+        }
+
+        #password-screen p {
+            font-size: 1em;
+            color: #888;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .terminal-text {
+            color: #00ff41;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .blinking-cursor {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .password-input-container {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        #passwordInput {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            border: 2px solid #333;
+            border-radius: 5px;
+            outline: none;
+            text-align: center;
+            letter-spacing: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+
+        #passwordInput:focus {
+            border-color: #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        #passwordInput.shake {
+            animation: shake 0.5s;
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 0.9em;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            letter-spacing: 1px;
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
+
+        #submitPassword {
+            padding: 15px 50px;
+            font-size: 1em;
+            border: 2px solid #00ff41;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            background: transparent;
+            color: #00ff41;
+            margin-top: 20px;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+        }
+
+        #submitPassword:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+
+        .access-denied {
+            color: #ff4444;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+
+        /* Transition Screen */
+        #transition-screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        #transition-screen h2 {
+            font-size: 1.5em;
+            color: #00ff41;
+            margin: 20px 0;
+            letter-spacing: 2px;
+        }
+
+        .loading-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin: 30px 0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: #00ff41;
+            width: 0%;
+            animation: load 2s ease-in-out forwards;
+        }
+
+        @keyframes load {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* Main Content Styles */
+        #main-content {
+            display: none;
+        }
+
+        #main-content h1 {
+            font-size: 2.5em;
+            color: #e91e63;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .heart {
+            font-size: 4em;
+            margin: 20px 0;
+            display: inline-block;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        .question {
+            font-size: 1.8em;
+            color: #333;
+            margin: 30px 0;
+            font-weight: bold;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 40px;
+            position: relative;
+            min-height: 60px;
+        }
+
+        button.valentine-btn {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #yesBtn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        #yesBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        #noBtn {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #666;
+            box-shadow: 0 4px 15px rgba(168, 237, 234, 0.4);
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+
+        .celebration {
+            display: none;
+        }
+
+        .celebration.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        .celebration h2 {
+            font-size: 2.5em;
+            color: #e91e63;
+            margin: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .celebration p {
+            font-size: 1.3em;
+            color: #555;
+            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* When main content is shown, change container style */
+        .container.unlocked {
+            background: rgba(255, 255, 255, 0.95);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+            50% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        .floating-hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .floating-heart {
+            position: absolute;
+            font-size: 2em;
+            animation: float 4s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 20px;
+                margin: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .question {
+                font-size: 1.4em;
+            }
+            
+            button {
+                padding: 12px 30px;
+                font-size: 1em;
+            }
+
+            .celebration h2 {
+                font-size: 1.8em;
+            }
+
+            .celebration p {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <!-- Password Screen -->
+        <div id="password-screen">
+            <h1>⚠ Access Required</h1>
+            <div class="lock-icon">🔒</div>
+            <div class="terminal-text">&gt; System: Authentication Required</div>
+            <div class="terminal-text">&gt; Enter Access Code<span class="blinking-cursor">_</span></div>
+            <div class="password-input-container">
+                <input 
+                    type="password" 
+                    id="passwordInput" 
+                    placeholder="• • • • • • • •"
+                    maxlength="20"
+                    autocomplete="off"
+                >
+                <div class="error-message" id="errorMessage">⚠ ACCESS DENIED - Invalid Code</div>
+            </div>
+            <button id="submitPassword" onclick="checkPassword()">Unlock</button>
+            <p class="access-denied" id="attemptCounter"></p>
+        </div>
+
+        <!-- Transition Screen -->
+        <div id="transition-screen">
+            <h2>✓ Access Granted</h2>
+            <p style="color: #888; margin: 20px 0;">Decrypting message...</p>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p style="color: #00ff41; font-size: 0.9em;">Loading content...</p>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content">
+            <div id="question-content">
+                <h1>My Sweet Muskan 💖</h1>
+                <div class="heart">❤️</div>
+                <p class="question">Will you be my Valentine?</p>
+                <div class="buttons">
+                    <button class="valentine-btn" id="yesBtn" onclick="sayYes()">Yes! 💕</button>
+                    <button class="valentine-btn" id="noBtn">No</button>
+                </div>
+            </div>
+            
+            <div id="celebration" class="celebration">
+                <div class="heart">💖</div>
+                <h2>Yay! The URF Baddie is mine! 🎉</h2>
+                <p>I'm the luckiest guy in the world to have you in my life! ❤️</p>
+                <p style="margin-top: 20px; font-size: 1.5em;">😊💕✨🌹💑</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-hearts" id="floatingHearts"></div>
+
+    <script>
+        const correctPassword = "MUSKIPOO";
+        const passwordInput = document.getElementById('passwordInput');
+        const errorMessage = document.getElementById('errorMessage');
+        let attempts = 0;
+
+        // Allow Enter key to submit password
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        function checkPassword() {
+            const enteredPassword = passwordInput.value.trim().toUpperCase();
+            
+            if (enteredPassword === correctPassword) {
+                // Correct password - show transition then main content
+                document.getElementById('password-screen').style.display = 'none';
+                document.getElementById('transition-screen').style.display = 'block';
+                
+                // After 2.5 seconds, show the valentine message
+                setTimeout(() => {
+                    document.getElementById('transition-screen').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    document.getElementById('mainContainer').classList.add('unlocked');
+                    document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    
+                    // Create some celebratory hearts
+                    for (let i = 0; i < 30; i++) {
+                        setTimeout(() => createFloatingHeart(), i * 50);
+                    }
+                }, 2500);
+            } else {
+                // Wrong password - shake and show error
+                attempts++;
+                passwordInput.classList.add('shake');
+                errorMessage.classList.add('show');
+                passwordInput.value = '';
+                
+                document.getElementById('attemptCounter').textContent = 
+                    `Failed attempts: ${attempts}`;
+                
+                setTimeout(() => {
+                    passwordInput.classList.remove('shake');
+                }, 500);
+                
+                setTimeout(() => {
+                    errorMessage.classList.remove('show');
+                }, 2000);
+            }
+        }
+
+        // Valentine's Day interaction code
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        let noBtnSize = 1;
+
+        // Make the No button run away from the cursor
+        noBtn.addEventListener('mouseover', function() {
+            const maxX = window.innerWidth - noBtn.offsetWidth - 100;
+            const maxY = window.innerHeight - noBtn.offsetHeight - 100;
+            
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+            
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+            
+            // Make Yes button bigger each time
+            noBtnSize += 0.1;
+            yesBtn.style.transform = `scale(${noBtnSize})`;
+        });
+
+        // Mobile touch support for No button
+        noBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const maxX = window.innerWidth - noBtn.offsetWidth - 50;
+            const maxY = window.innerHeight - noBtn.offsetHeight - 50;
+            
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+            
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+            
+            noBtnSize += 0.1;
+            yesBtn.style.transform = `scale(${noBtnSize})`;
+        });
+
+        function sayYes() {
+            document.getElementById('question-content').style.display = 'none';
+            document.getElementById('celebration').classList.add('active');
+            createFloatingHearts();
+            
+            // Confetti effect
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => createFloatingHeart(), i * 100);
+            }
+        }
+
+        function createFloatingHearts() {
+            const heartsContainer = document.getElementById('floatingHearts');
+            heartsContainer.innerHTML = '';
+        }
+
+        function createFloatingHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart';
+            heart.textContent = ['❤️', '💕', '💖', '💗', '💝'][Math.floor(Math.random() * 5)];
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            heart.style.animationDelay = '0s';
+            
+            document.getElementById('floatingHearts').appendChild(heart);
+            
+            setTimeout(() => heart.remove(), 6000);
+        }
+    </script>
+</body>
+</html>
