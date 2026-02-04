@@ -53,13 +53,6 @@
             opacity: 0.8;
         }
 
-        #password-screen p {
-            font-size: 1em;
-            color: #888;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-
         .terminal-text {
             color: #00ff41;
             font-size: 0.9em;
@@ -149,38 +142,70 @@
             margin-top: 10px;
         }
 
-        /* Transition Screen */
-        #transition-screen {
+        /* Game Screen */
+        #game-screen {
             display: none;
-            animation: fadeIn 0.5s;
-        }
-
-        #transition-screen h2 {
-            font-size: 1.5em;
-            color: #00ff41;
-            margin: 20px 0;
-            letter-spacing: 2px;
-        }
-
-        .loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 4px;
-            background: #333;
-            margin: 30px 0;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .loading-progress {
             height: 100%;
-            background: #00ff41;
-            width: 0%;
-            animation: load 2s ease-in-out forwards;
+            background: #000;
+            z-index: 9999;
         }
 
-        @keyframes load {
-            0% { width: 0%; }
-            100% { width: 100%; }
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #000428, #004e92);
+            margin: 0 auto;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff41;
+            font-size: 1.2em;
+            text-align: center;
+            width: 100%;
+            z-index: 10000;
+        }
+
+        .game-instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        #nextButton {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: 2px solid #00ff41;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            background: rgba(0, 255, 65, 0.2);
+            color: #00ff41;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            display: none;
+        }
+
+        #nextButton:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.8);
         }
 
         /* Main Content Styles */
@@ -274,7 +299,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* When main content is shown, change container style */
         .container.unlocked {
             background: rgba(255, 255, 255, 0.95);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -387,18 +411,23 @@
             <button id="submitPassword" onclick="checkPassword()">Unlock</button>
             <p class="access-denied" id="attemptCounter"></p>
         </div>
+    </div>
 
-        <!-- Transition Screen -->
-        <div id="transition-screen">
-            <h2>✓ Access Granted</h2>
-            <p style="color: #888; margin: 20px 0;">Decrypting message...</p>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
-            </div>
-            <p style="color: #00ff41; font-size: 0.9em;">Loading content...</p>
+    <!-- Game Screen -->
+    <div id="game-screen">
+        <div class="game-ui">
+            <div>ALIENS DESTROYED: <span id="score">0</span> / 10</div>
+            <div style="margin-top: 10px; font-size: 0.9em;">⚠ ELIMINATE ALL THREATS ⚠</div>
         </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="game-instructions">
+            USE ARROW KEYS ← → TO MOVE | SPACEBAR TO SHOOT
+        </div>
+        <button id="nextButton" onclick="goToValentine()">ONTO SENSITIVE DOCUMENTS →</button>
+    </div>
 
-        <!-- Main Content -->
+    <!-- Main Content -->
+    <div class="container" id="valentineContainer" style="display: none;">
         <div id="main-content">
             <div id="question-content">
                 <h1>My Sweet Muskan 💖</h1>
@@ -438,22 +467,10 @@
             const enteredPassword = passwordInput.value.trim().toUpperCase();
             
             if (enteredPassword === correctPassword) {
-                // Correct password - show transition then main content
-                document.getElementById('password-screen').style.display = 'none';
-                document.getElementById('transition-screen').style.display = 'block';
-                
-                // After 2.5 seconds, show the valentine message
-                setTimeout(() => {
-                    document.getElementById('transition-screen').style.display = 'none';
-                    document.getElementById('main-content').style.display = 'block';
-                    document.getElementById('mainContainer').classList.add('unlocked');
-                    document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    
-                    // Create some celebratory hearts
-                    for (let i = 0; i < 30; i++) {
-                        setTimeout(() => createFloatingHeart(), i * 50);
-                    }
-                }, 2500);
+                // Correct password - show game
+                document.getElementById('mainContainer').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'block';
+                initGame();
             } else {
                 // Wrong password - shake and show error
                 attempts++;
@@ -474,12 +491,241 @@
             }
         }
 
+        // SPACE SHOOTER GAME
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let gameRunning = false;
+        let score = 0;
+        const targetScore = 10;
+
+        // Player ship
+        const player = {
+            x: 0,
+            y: 0,
+            width: 40,
+            height: 40,
+            speed: 5,
+            moveLeft: false,
+            moveRight: false
+        };
+
+        // Bullets
+        let bullets = [];
+        const bulletSpeed = 7;
+
+        // Enemies
+        let enemies = [];
+        const enemySpeed = 2;
+
+        // Stars background
+        let stars = [];
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2
+            });
+        }
+
+        function initGame() {
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - 100;
+            gameRunning = true;
+            score = 0;
+            bullets = [];
+            enemies = [];
+            
+            // Create initial enemies
+            for (let i = 0; i < 5; i++) {
+                createEnemy();
+            }
+            
+            gameLoop();
+        }
+
+        function createEnemy() {
+            enemies.push({
+                x: Math.random() * (canvas.width - 40),
+                y: -50,
+                width: 40,
+                height: 40,
+                speed: enemySpeed + Math.random() * 2
+            });
+        }
+
+        // Controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            if (e.key === 'ArrowLeft') player.moveLeft = true;
+            if (e.key === 'ArrowRight') player.moveRight = true;
+            if (e.key === ' ') {
+                e.preventDefault();
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 15
+                });
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') player.moveLeft = false;
+            if (e.key === 'ArrowRight') player.moveRight = false;
+        });
+
+        function drawPlayer() {
+            // Draw spaceship
+            ctx.fillStyle = '#00ff41';
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x, player.y + player.height);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Cockpit
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x + player.width / 2 - 5, player.y + 15, 10, 10);
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = '#ffff00';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                // Draw alien ship
+                ctx.fillStyle = '#ff0066';
+                ctx.beginPath();
+                ctx.moveTo(enemy.x + enemy.width / 2, enemy.y + enemy.height);
+                ctx.lineTo(enemy.x, enemy.y);
+                ctx.lineTo(enemy.x + enemy.width, enemy.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Alien eyes
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(enemy.x + 10, enemy.y + 10, 5, 5);
+                ctx.fillRect(enemy.x + 25, enemy.y + 10, 5, 5);
+            });
+        }
+
+        function drawStars() {
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(star => {
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += 0.5;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function update() {
+            // Move player
+            if (player.moveLeft && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (player.moveRight && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+
+            // Move bullets
+            bullets = bullets.filter(bullet => {
+                bullet.y -= bulletSpeed;
+                return bullet.y > 0;
+            });
+
+            // Move enemies
+            enemies.forEach((enemy, enemyIndex) => {
+                enemy.y += enemy.speed;
+                
+                // Check collision with bullets
+                bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        
+                        enemies.splice(enemyIndex, 1);
+                        bullets.splice(bulletIndex, 1);
+                        score++;
+                        document.getElementById('score').textContent = score;
+                        
+                        // Create new enemy
+                        if (score < targetScore) {
+                            createEnemy();
+                        }
+                        
+                        // Check if won
+                        if (score >= targetScore) {
+                            gameRunning = false;
+                            document.getElementById('nextButton').style.display = 'block';
+                        }
+                    }
+                });
+                
+                // Remove enemies that went off screen
+                if (enemy.y > canvas.height) {
+                    enemies.splice(enemyIndex, 1);
+                    if (score < targetScore) {
+                        createEnemy();
+                    }
+                }
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawStars();
+            drawPlayer();
+            drawBullets();
+            drawEnemies();
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            } else if (score >= targetScore) {
+                draw();
+            }
+        }
+
+        function goToValentine() {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('valentineContainer').style.display = 'block';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('valentineContainer').classList.add('unlocked');
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            
+            // Create celebratory hearts
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => createFloatingHeart(), i * 50);
+            }
+        }
+
         // Valentine's Day interaction code
         const noBtn = document.getElementById('noBtn');
         const yesBtn = document.getElementById('yesBtn');
         let noBtnSize = 1;
 
-        // Make the No button run away from the cursor
         noBtn.addEventListener('mouseover', function() {
             const maxX = window.innerWidth - noBtn.offsetWidth - 100;
             const maxY = window.innerHeight - noBtn.offsetHeight - 100;
@@ -491,12 +737,10 @@
             noBtn.style.left = randomX + 'px';
             noBtn.style.top = randomY + 'px';
             
-            // Make Yes button bigger each time
             noBtnSize += 0.1;
             yesBtn.style.transform = `scale(${noBtnSize})`;
         });
 
-        // Mobile touch support for No button
         noBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
             const maxX = window.innerWidth - noBtn.offsetWidth - 50;
@@ -516,17 +760,10 @@
         function sayYes() {
             document.getElementById('question-content').style.display = 'none';
             document.getElementById('celebration').classList.add('active');
-            createFloatingHearts();
             
-            // Confetti effect
             for (let i = 0; i < 50; i++) {
                 setTimeout(() => createFloatingHeart(), i * 100);
             }
-        }
-
-        function createFloatingHearts() {
-            const heartsContainer = document.getElementById('floatingHearts');
-            heartsContainer.innerHTML = '';
         }
 
         function createFloatingHeart() {
